@@ -1,0 +1,46 @@
+# 🌱 node_modules を全階層で無視
+**/node_modules/
+
+# 🧪 build/出力系
+dist/
+build/
+lib/
+
+# 🔧 VSCode 設定
+.vscode/
+.settings/
+
+# 💥 Expo 関連
+.expo/
+.expo-shared/
+
+# 🍃 環境変数など機密系
+.env
+.env.*
+!.env.example
+
+# 💻 macOS 系
+.DS_Store
+
+# ⚙️ Windows 系
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# 🚀 Yarn/NPM/キャッシュ系
+.yarn/
+.yarnrc
+.pnp.*
+.npm/
+.npmrc
+
+# 📦 パッケージマネージャ出力
+*.tgz
+
+# 🎯 テスト/カバレッジ
+coverage/
+.nyc_output/
+
+# 🧪 IDE
+.idea/
+*.iml
