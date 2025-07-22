@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./my-server
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./my-server:/usr/src/app
+    working_dir: /usr/src/app
+    command: node index.js
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: myapp
+
+volumes:
+  mongo-data:
