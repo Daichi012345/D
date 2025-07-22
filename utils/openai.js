@@ -5,20 +5,10 @@ import { getSuggestionCache, saveSuggestionCache } from './suggestionCache';
 const GPT_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 const GPT_MODEL = 'gpt-4o';
 
-/**
- * =============================
- *  🔧 1. 共通ユーティリティ
- * =============================
- */
 
-/**
- * Promise を delay させる
- */
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
-/**
- * OpenAI に POST（429 リトライ対応）
- */
+
 const postWithRetry = async (data, retries = 3, delay = 1500) => {
   for (let i = 0; i < retries; i++) {
     try {
@@ -39,15 +29,6 @@ const postWithRetry = async (data, retries = 3, delay = 1500) => {
   }
 };
 
-/**
- * =============================
- *  🧩 2. ルールベース辞書
- * =============================
- */
-
-/**
- * キーワード ➡️ ジャンル & 理由 の対応表
- */
 const RULE_BASED_GENRE_MAP = [
   // ----- 清涼系 -----
   {
@@ -129,38 +110,25 @@ const RULE_BASED_GENRE_MAP = [
   },
 ];
 
-/**
- * ルールベース判定
- */
+
 const ruleBasedClassify = (userInputText) => {
   for (const rule of RULE_BASED_GENRE_MAP) {
     if (rule.regex.test(userInputText)) {
       return { genre: rule.genre, reason: rule.reason };
     }
   }
-  return null; // 該当なし
+  return null; 
 };
 
-/**
- * =============================
- *  🎨 3. ジャンル分類
- * =============================
- */
-
-/**
- * 気分・体調に応じたジャンル分類
- * 1️⃣ まずルールベース辞書を照合
- * 2️⃣ 該当なしの場合のみ GPT で分類
- */
 export const classifyMoodToGenre = async (userInputText) => {
-  // 1. ルールベース
+  //  ルールベース
   const ruleResult = ruleBasedClassify(userInputText);
   if (ruleResult) {
     console.log('🔍 ルールベース分類ヒット');
     return ruleResult;
   }
 
-  // 2. GPT へフォールバック
+  //  GPT へフォールバック
   console.log('🤖 規則一致なし → GPT で分類');
   const prompt = `
 あなたは食事提案AIです。
@@ -191,11 +159,6 @@ export const classifyMoodToGenre = async (userInputText) => {
   };
 };
 
-/**
- * =============================
- *  🍽️ 4. レシピ関連 GPT 呼び出し
- * =============================
- */
 export const getRecipeKeywordFromGPT = async (genreText, userInputText, allergyList = []) => {
   const allergyText = allergyList.length > 0 ? `※以下の食材は絶対に含まないでください：${allergyList.join(', ')}` : '';
 
@@ -244,11 +207,7 @@ export const translateText = async (text) => {
   return res.data.choices[0].message.content.trim();
 };
 
-/**
- * =============================
- *  🚀 5. 提案ハンドリング（キャッシュ付き）
- * =============================
- */
+
 export const handleSubmit = async (userInput, user, navigation, setLoading, searchRecipeByName, Alert) => {
   if (!userInput.trim()) {
     Alert.alert('入力エラー', '気分や体調を入力してください');
@@ -262,26 +221,23 @@ export const handleSubmit = async (userInput, user, navigation, setLoading, sear
     const cacheKey = `${userInput.trim()}___${allergyList.join(',')}`;
     const cache = await getSuggestionCache();
 
-    // 1. キャッシュヒット
     if (cache[cacheKey]) {
       console.log('✅ キャッシュから即時提案');
       navigation.navigate('MealSuggestionScreen', { meal: cache[cacheKey] });
       return;
     }
 
-    // 2. ジャンル分類（ルール or GPT）
     console.log('🚀 キャッシュなし → 通常処理開始');
     const { genre, reason } = await classifyMoodToGenre(userInput);
     console.log('🎨 分類ジャンル:', genre);
 
-    // 3. 料理名提案 (GPT)
     let keyword = await getRecipeKeywordFromGPT(genre, userInput, allergyList);
     console.log('🍽️ GPT 生成料理名:', keyword);
 
-    // 4. Spoonacular 検索
+ 
     let recipe = await searchRecipeByName(keyword, allergyList);
 
-    // 5. 見つからなければ再トライ
+    // 見つからなければ再トライ
     if (!recipe) {
       console.log('🔄 再検索（気分・体調のみで再提案）');
       keyword = await getRecipeKeywordFromGPT('', userInput, allergyList);
@@ -294,11 +250,11 @@ export const handleSubmit = async (userInput, user, navigation, setLoading, sear
       }
     }
 
-    // 6. 日本語訳
+    //  日本語訳
     const jpName = await translateRecipeName(recipe.name);
     console.log('🇯🇵 日本語訳:', jpName);
 
-    // 7. 結果まとめ
+    //  結果まとめ
     const meal = {
       ...recipe,
       name: jpName,
@@ -306,12 +262,10 @@ export const handleSubmit = async (userInput, user, navigation, setLoading, sear
       reason: reason,
     };
 
-    // 8. キャッシュ保存
     cache[cacheKey] = meal;
     await saveSuggestionCache(cache);
     console.log('✅ キャッシュ保存完了');
 
-    // 9. 画面遷移
     navigation.navigate('MealSuggestionScreen', { meal });
   } catch (err) {
     console.error('提案エラー:', err?.response?.data || err);
